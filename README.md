@@ -45,8 +45,6 @@ SecureLock implements two distinct cryptographic algorithms (AES-256-GCM and RSA
 
 ## Installation
 
-### Option 1: From Source
-
 1. Clone the repository or download the source code:
 
    ```
@@ -65,11 +63,6 @@ SecureLock implements two distinct cryptographic algorithms (AES-256-GCM and RSA
    python securelock.py
    ```
 
-### Option 2: Standalone Executable (Windows only)
-
-1. Download the latest `SecureLock-Setup.exe` from the [Releases](https://github.com/yourusername/securelock/releases) page
-2. Run the installer and follow the on-screen instructions
-3. Launch SecureLock from the Start menu or desktop shortcut
 
 ## Usage Guide
 
