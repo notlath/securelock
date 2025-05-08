@@ -10,7 +10,9 @@ import base64
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import hashlib
+import time
 from typing import Tuple, Dict, Optional, Union
+from datetime import datetime, timedelta
 
 # Import cryptography libraries
 try:
@@ -42,10 +44,13 @@ class SecureLock:
         if not os.path.exists(self.keys_dir):
             os.makedirs(self.keys_dir)
             
-        # Tracking for self-destruct mechanism
+        # Tracking for self-destruct mechanism and brute force protection
         self.attempts_registry = {}  # Tracks decryption attempts per file
+        self.lockout_registry = {}   # Tracks lockout times for files with failed attempts
         self.attempts_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".attempts")
+        self.lockout_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".lockouts")
         self.load_attempts()
+        self.load_lockouts()
         
         # Setup GUI components
         self.setup_gui()
@@ -367,6 +372,17 @@ class SecureLock:
         
         # Check for failed attempts and self-destruct if needed
         attempts = self.get_attempts(file_path)
+        lockout_time = self.get_lockout_time(file_path)
+        if lockout_time and lockout_time > datetime.now():
+            remaining_time = (lockout_time - datetime.now()).seconds
+            messagebox.showerror(
+                "Lockout Active", 
+                f"This file is locked due to failed decryption attempts.\n\n"
+                f"Please wait {remaining_time} seconds before trying again."
+            )
+            self.status_var.set(f"File locked. Try again in {remaining_time} seconds.")
+            return
+        
         if attempts >= 3:
             messagebox.showerror(
                 "Self-Destruct Triggered", 
@@ -457,6 +473,7 @@ class SecureLock:
                 
                 # Reset attempts counter
                 self.reset_attempts(file_path)
+                self.reset_lockout(file_path)
                 
                 self.status_var.set(f"File decrypted successfully: {output_path}")
                 messagebox.showinfo("Success", "File decrypted successfully! Encrypted file has been removed.")
@@ -489,6 +506,7 @@ class SecureLock:
                         deletion_message = "Encrypted file has been deleted. Original file not found."
                     
                     self.reset_attempts(file_path)
+                    self.reset_lockout(file_path)
                     messagebox.showerror(
                         "Self-Destruct Triggered", 
                         f"Self-destruct mechanism activated after 3 failed attempts.\n\n{deletion_message}"
@@ -496,12 +514,15 @@ class SecureLock:
                     self.status_var.set("Self-destruct triggered. Files deleted.")
                     self.file_path_var.set("No file selected")
                 else:
+                    lockout_duration = timedelta(seconds=30)  # Lockout duration after failed attempt
+                    self.set_lockout(file_path, datetime.now() + lockout_duration)
                     messagebox.showerror(
                         "Decryption Error", 
                         f"Failed to decrypt file. Incorrect password?\n\n"
-                        f"{3 - attempts} attempts remaining before self-destruct."
+                        f"{3 - attempts} attempts remaining before self-destruct.\n"
+                        f"File locked for {lockout_duration.seconds} seconds."
                     )
-                    self.status_var.set(f"Decryption failed. {3 - attempts} attempts remaining.")
+                    self.status_var.set(f"Decryption failed. {3 - attempts} attempts remaining. File locked.")
                 
                 # Clear password field after failed decryption
                 self.password_var.set("")
@@ -530,6 +551,27 @@ class SecureLock:
             del self.attempts_registry[file_id]
             self.save_attempts()
     
+    def get_lockout_time(self, file_path: str) -> Optional[datetime]:
+        """Get the lockout time for a file."""
+        file_id = self._get_file_id(file_path)
+        lockout_timestamp = self.lockout_registry.get(file_id)
+        if lockout_timestamp:
+            return datetime.fromtimestamp(lockout_timestamp)
+        return None
+    
+    def set_lockout(self, file_path: str, lockout_time: datetime) -> None:
+        """Set the lockout time for a file."""
+        file_id = self._get_file_id(file_path)
+        self.lockout_registry[file_id] = lockout_time.timestamp()
+        self.save_lockouts()
+    
+    def reset_lockout(self, file_path: str) -> None:
+        """Reset the lockout time for a file."""
+        file_id = self._get_file_id(file_path)
+        if file_id in self.lockout_registry:
+            del self.lockout_registry[file_id]
+            self.save_lockouts()
+    
     def _get_file_id(self, file_path: str) -> str:
         """Generate a unique identifier for a file."""
         if os.path.exists(file_path):
@@ -556,6 +598,25 @@ class SecureLock:
         try:
             with open(self.attempts_file, "w") as f:
                 json.dump(self.attempts_registry, f)
+        except IOError:
+            pass  # Silently fail if we can't write to the file
+    
+    def load_lockouts(self) -> None:
+        """Load lockout times from file."""
+        if os.path.exists(self.lockout_file):
+            try:
+                with open(self.lockout_file, "r") as f:
+                    self.lockout_registry = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                self.lockout_registry = {}
+        else:
+            self.lockout_registry = {}
+    
+    def save_lockouts(self) -> None:
+        """Save lockout times to file."""
+        try:
+            with open(self.lockout_file, "w") as f:
+                json.dump(self.lockout_registry, f)
         except IOError:
             pass  # Silently fail if we can't write to the file
     
