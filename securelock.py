@@ -450,14 +450,27 @@ class SecureLock:
                 attempts = self.get_attempts(file_path)
                 
                 if attempts >= 3:
-                    # Self-destruct triggered
+                    # Self-destruct triggered - delete the encrypted file
                     os.remove(file_path)
+                    
+                    # Also try to delete the original file if it exists
+                    # Remove the .securelock extension to get the original file path
+                    original_file_path = file_path[:-11]  # Remove '.securelock'
+                    if os.path.exists(original_file_path):
+                        try:
+                            os.remove(original_file_path)
+                            deletion_message = "Both encrypted and original files have been deleted."
+                        except:
+                            deletion_message = "Encrypted file has been deleted. Could not delete original file."
+                    else:
+                        deletion_message = "Encrypted file has been deleted. Original file not found."
+                    
                     self.reset_attempts(file_path)
                     messagebox.showerror(
                         "Self-Destruct Triggered", 
-                        "The file has been deleted due to too many failed decryption attempts."
+                        f"Self-destruct mechanism activated after 3 failed attempts.\n\n{deletion_message}"
                     )
-                    self.status_var.set("Self-destruct triggered. File deleted.")
+                    self.status_var.set("Self-destruct triggered. Files deleted.")
                     self.file_path_var.set("No file selected")
                 else:
                     messagebox.showerror(
