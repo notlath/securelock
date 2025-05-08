@@ -178,7 +178,7 @@ If you want to generate a new RSA key pair (will not affect already encrypted fi
 
 ### Getting Help
 
-If you encounter issues not covered here, please [open an issue](https://github.com/yourusername/securelock/issues) with details about the problem.
+If you encounter issues not covered here, please [open an issue](https://github.com/notlath/securelock/issues) with details about the problem.
 
 ## License
 
