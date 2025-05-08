@@ -48,7 +48,7 @@ SecureLock implements two distinct cryptographic algorithms (AES-256-GCM and RSA
 1. Clone the repository or download the source code:
 
    ```
-   git clone https://github.com/yourusername/securelock.git
+   git clone https://github.com/notlath/securelock.git
    cd securelock
    ```
 
@@ -62,7 +62,6 @@ SecureLock implements two distinct cryptographic algorithms (AES-256-GCM and RSA
    ```
    python securelock.py
    ```
-
 
 ## Usage Guide
 
