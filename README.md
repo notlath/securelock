@@ -8,7 +8,7 @@ A secure, offline file encryption/decryption tool with dual-layer cryptography a
 
 ## Project Overview
 
-This project was developed as a Final Laboratory Project for CS 005 (Information Security). It addresses the following Student Outcomes:
+This project was developed as a Final Laboratory Project for CS 005 (Information Assurance and Security). It addresses the following Student Outcomes:
 
 - **SO 2:** Design, implement, and evaluate a computing-based solution to meet a given set of computing requirements in the context of the program's discipline.
 - **SO 4:** Recognize professional responsibilities and make informed judgments in computing practice based on legal and ethical principles.
@@ -80,14 +80,15 @@ When you first launch SecureLock, you'll be prompted to generate your RSA key pa
 
 1. Click "Browse" and select the file you want to encrypt
 2. Click "🔒 Encrypt"
-3. The encrypted file will be saved with a `.securelock` extension in the same directory as the original file
+3. The file will be encrypted and saved with a `.securelock` extension.
 
 ### Decrypting a File
 
 1. Click "Browse" and select a `.securelock` file
 2. Enter your RSA private key password in the password field
 3. Click "🔓 Decrypt"
-4. The decrypted file will be saved in the same directory with a `_decrypted` suffix
+4. The file will be decrypted back to its original name, and the `.securelock` file will be deleted
+   - If a file with the original name already exists, you'll be asked if you want to overwrite it
 
 ### Self-Destruct Mechanism
 

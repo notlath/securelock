@@ -335,6 +335,9 @@ class SecureLock:
                 f.write(metadata_json)
                 f.write(ciphertext)
             
+            # Delete the original file after successful encryption
+            os.remove(file_path)
+            
             self.status_var.set(f"File encrypted successfully: {output_path}")
             messagebox.showinfo("Success", "File encrypted successfully!")
             
@@ -370,6 +373,8 @@ class SecureLock:
                 "The file has been deleted due to too many failed decryption attempts."
             )
             self.status_var.set("Self-destruct triggered. File deleted.")
+            # Clear password field
+            self.password_var.set("")
             return
         
         try:
@@ -378,6 +383,8 @@ class SecureLock:
             
             if not os.path.exists(private_key_path):
                 messagebox.showerror("Error", "RSA private key not found. Please generate RSA keys first.")
+                # Clear password field
+                self.password_var.set("")
                 return
             
             # Read encrypted file
@@ -417,32 +424,48 @@ class SecureLock:
                 if computed_hash != file_hash:
                     messagebox.showerror("Integrity Error", 
                                         "File integrity check failed. The file may be corrupted.")
+                    # Clear password field
+                    self.password_var.set("")
                     return
                 
-                # Determine output filename
+                # Determine output filename - use original filename instead of adding "_decrypted"
                 output_dir = os.path.dirname(file_path)
-                base_name = os.path.splitext(original_filename)[0]
-                ext = os.path.splitext(original_filename)[1]
+                output_path = os.path.join(output_dir, original_filename)
                 
-                # Create unique output filename
-                output_path = os.path.join(output_dir, f"{base_name}_decrypted{ext}")
-                counter = 1
-                while os.path.exists(output_path):
-                    output_path = os.path.join(output_dir, f"{base_name}_decrypted_{counter}{ext}")
-                    counter += 1
+                # Check if file already exists
+                if os.path.exists(output_path):
+                    result = messagebox.askyesno(
+                        "File Already Exists", 
+                        f"The file '{original_filename}' already exists. Do you want to overwrite it?"
+                    )
+                    if not result:
+                        # Let user choose alternative filename
+                        base_name = os.path.splitext(original_filename)[0]
+                        ext = os.path.splitext(original_filename)[1]
+                        output_path = os.path.join(output_dir, f"{base_name}_decrypted{ext}")
+                        counter = 1
+                        while os.path.exists(output_path):
+                            output_path = os.path.join(output_dir, f"{base_name}_decrypted_{counter}{ext}")
+                            counter += 1
                 
                 # Write decrypted file
                 with open(output_path, "wb") as f:
                     f.write(decrypted_data)
                 
+                # Delete the encrypted .securelock file after successful decryption
+                os.remove(file_path)
+                
                 # Reset attempts counter
                 self.reset_attempts(file_path)
                 
                 self.status_var.set(f"File decrypted successfully: {output_path}")
-                messagebox.showinfo("Success", "File decrypted successfully!")
+                messagebox.showinfo("Success", "File decrypted successfully! Encrypted file has been removed.")
                 
                 # Update file path to the decrypted file
                 self.file_path_var.set(output_path)
+                
+                # Clear password field after successful decryption
+                self.password_var.set("")
                 
             except (ValueError, KeyError) as e:
                 # Handle decryption failure (likely wrong password)
@@ -479,10 +502,15 @@ class SecureLock:
                         f"{3 - attempts} attempts remaining before self-destruct."
                     )
                     self.status_var.set(f"Decryption failed. {3 - attempts} attempts remaining.")
+                
+                # Clear password field after failed decryption
+                self.password_var.set("")
         
         except Exception as e:
             self.status_var.set(f"Decryption error: {str(e)}")
             messagebox.showerror("Decryption Error", f"Failed to decrypt file: {str(e)}")
+            # Clear password field on any error
+            self.password_var.set("")
     
     def get_attempts(self, file_path: str) -> int:
         """Get the number of failed attempts for a file."""
