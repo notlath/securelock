@@ -3,6 +3,7 @@
 # Keys and security-sensitive files
 keys/private.pem
 .attempts
+.lockouts
 *.securelock
 
 # Python compiled files
