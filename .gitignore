@@ -27,6 +27,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+tempCodeRunnerFile.py
 
 # Virtual environment
 venv/
